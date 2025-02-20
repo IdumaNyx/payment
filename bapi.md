@@ -1,4 +1,4 @@
-REPORT zcreate_sales_order.
+REPORT zsimulate_sales_order.
 
 * Custom Types Definition
 TYPES: BEGIN OF ty_vbak,
@@ -83,8 +83,7 @@ START-OF-SELECTION.
         ls_order_schedule  TYPE bapischdl,
         lt_order_partners  TYPE TABLE OF bapiparnr,
         ls_order_partner   TYPE bapiparnr,
-        lt_return          TYPE TABLE OF bapiret2,
-        lv_new_order       TYPE vbak-vbeln.
+        lt_return          TYPE TABLE OF bapiret2.
 
   " Populate Order Header
   ls_order_header-doc_type = 'TA'. " Standard Order
@@ -113,8 +112,8 @@ START-OF-SELECTION.
   ls_order_partner-partn_numb = ls_selected-kunnr.
   APPEND ls_order_partner TO lt_order_partners.
 
-  " Call BAPI to Create Sales Order
-  CALL FUNCTION 'BAPI_SALESORDER_CREATEFROMDAT2'
+  " Call BAPI to Simulate Sales Order
+  CALL FUNCTION 'BAPI_SALESORDER_SIMULATE'
     EXPORTING
       order_header_in    = ls_order_header
     TABLES
@@ -123,22 +122,7 @@ START-OF-SELECTION.
       order_schedules_in = lt_order_schedules
       order_partners     = lt_order_partners.
 
-  " Check for Errors
-  READ TABLE lt_return INTO DATA(ls_return) WITH KEY type = 'E'.
-  IF sy-subrc = 0.
-    MESSAGE |Error Creating Order: { ls_return-message }| TYPE 'E'.
-  ENDIF.
-
-  " Commit the Order Creation
-  CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
-    EXPORTING
-      wait = 'X'.
-
-  " Retrieve Created Order Number
-  READ TABLE lt_return INTO ls_return WITH KEY type = 'S'.
-  IF sy-subrc = 0.
-    lv_new_order = ls_return-message.
-    MESSAGE |New Sales Order Created: { lv_new_order }| TYPE 'S'.
-  ELSE.
-    MESSAGE 'Order creation failed!' TYPE 'E'.
-  ENDIF.
+  " Display Simulation Messages
+  LOOP AT lt_return INTO DATA(ls_return).
+    MESSAGE |{ ls_return-type }: { ls_return-message }| TYPE 'I'.
+  ENDLOOP.
