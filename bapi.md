@@ -72,7 +72,7 @@ PARAMETERS: p_vbeln TYPE vbak-vbeln.
 START-OF-SELECTION.
 
   " Fetch Sales Order Header
-  DATA(lt_vbak) = VALUE ty_vbak_tab( ).
+  DATA lt_vbak TYPE ty_vbak_tab.
   SELECT vbeln, kunnr, erdat, ernam, netwr
     FROM vbak
     INTO TABLE lt_vbak
@@ -83,7 +83,7 @@ START-OF-SELECTION.
   ENDIF.
 
   " Fetch Sales Order Items
-  DATA(lt_vbap) = VALUE ty_vbap_tab( ).
+  DATA lt_vbap TYPE ty_vbap_tab.
   SELECT vbeln, posnr, matnr, kwmeng, netpr
     FROM vbap
     INTO TABLE lt_vbap
@@ -91,7 +91,7 @@ START-OF-SELECTION.
     WHERE vbeln = lt_vbak-vbeln.
 
   " Fetch Customer Data
-  DATA(lt_kna1) = VALUE ty_kna1_tab( ).
+  DATA lt_kna1 TYPE ty_kna1_tab.
   SELECT kunnr, name1, land1, regio
     FROM kna1
     INTO TABLE lt_kna1
@@ -99,7 +99,7 @@ START-OF-SELECTION.
     WHERE kunnr = lt_vbak-kunnr.
 
   " Fetch Customer Sales Data
-  DATA(lt_knvv) = VALUE ty_knvv_tab( ).
+  DATA lt_knvv TYPE ty_knvv_tab.
   SELECT kunnr, vkorg, vtweg
     FROM knvv
     INTO TABLE lt_knvv
@@ -107,7 +107,7 @@ START-OF-SELECTION.
     WHERE kunnr = lt_vbak-kunnr.
 
   " Fetch Material Data
-  DATA(lt_mara) = VALUE ty_mara_tab( ).
+  DATA lt_mara TYPE ty_mara_tab.
   SELECT matnr, matkl, meins
     FROM mara
     INTO TABLE lt_mara
@@ -115,7 +115,7 @@ START-OF-SELECTION.
     WHERE matnr = lt_vbap-matnr.
 
   " Fetch Material Sales Data
-  DATA(lt_mvke) = VALUE ty_mvke_tab( ).
+  DATA lt_mvke TYPE ty_mvke_tab.
   SELECT matnr, vkorg, vtweg
     FROM mvke
     INTO TABLE lt_mvke
@@ -123,14 +123,14 @@ START-OF-SELECTION.
     WHERE matnr = lt_vbap-matnr.
 
   " Fetch Billing Header Data
-  DATA(lt_vbrk) = VALUE ty_vbrk_tab( ).
+  DATA lt_vbrk TYPE ty_vbrk_tab.
   SELECT vbeln, fkdat, netwr
     FROM vbrk
     INTO TABLE lt_vbrk
     WHERE vbeln = p_vbeln.
 
   " Fetch Billing Item Data
-  DATA(lt_vbrp) = VALUE ty_vbrp_tab( ).
+  DATA lt_vbrp TYPE ty_vbrp_tab.
   SELECT vbeln, posnr, matnr, kwmeng
     FROM vbrp
     INTO TABLE lt_vbrp
@@ -138,7 +138,8 @@ START-OF-SELECTION.
 
   " Display Data in ALV
   TRY.
-      DATA(lo_alv) = cl_salv_table=>factory( IMPORTING r_salv_table = lo_alv CHANGING t_table = lt_vbak ).
+      DATA lo_alv TYPE REF TO cl_salv_table.
+      cl_salv_table=>factory( IMPORTING r_salv_table = lo_alv CHANGING t_table = lt_vbak ).
       lo_alv->display( ).
   CATCH cx_salv_msg.
       MESSAGE 'Error displaying ALV' TYPE 'E'.
