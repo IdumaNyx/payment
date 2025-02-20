@@ -22,12 +22,30 @@ TYPES: BEGIN OF ty_vbap,
 
 TYPES: ty_vbap_tab TYPE TABLE OF ty_vbap.
 
+TYPES: BEGIN OF ty_bapiret2,
+         type    TYPE bapiret2-type,
+         id      TYPE bapiret2-id,
+         message TYPE bapiret2-message,
+       END OF ty_bapiret2.
+
+TYPES: ty_bapiret2_tab TYPE TABLE OF ty_bapiret2.
+
+TYPES: BEGIN OF ty_bapicond,
+         itm_number TYPE bapicond-itm_number,
+         cond_type  TYPE bapicond-cond_type,
+         cond_value TYPE bapicond-cond_value,
+       END OF ty_bapicond.
+
+TYPES: ty_bapicond_tab TYPE TABLE OF ty_bapicond.
+
 * Selection Screen
 PARAMETERS: p_vbeln TYPE vbak-vbeln.
 
 * Internal Tables
 DATA lt_vbak TYPE ty_vbak_tab.
 DATA lt_vbap TYPE ty_vbap_tab.
+DATA lt_return TYPE ty_bapiret2_tab.
+DATA lt_pricing TYPE ty_bapicond_tab.
 
 START-OF-SELECTION.
 
@@ -72,9 +90,6 @@ START-OF-SELECTION.
     MESSAGE 'No order selected!' TYPE 'E'.
   ENDIF.
 
-  " Display the selected order
-  MESSAGE |Selected Order: { ls_selected-vbeln }| TYPE 'I'.
-
   " Prepare BAPI input
   DATA: ls_order_header    TYPE bapisdh1,
         lt_order_items     TYPE TABLE OF bapisditm,
@@ -82,8 +97,7 @@ START-OF-SELECTION.
         lt_order_schedules TYPE TABLE OF bapischdl,
         ls_order_schedule  TYPE bapischdl,
         lt_order_partners  TYPE TABLE OF bapiparnr,
-        ls_order_partner   TYPE bapiparnr,
-        lt_return          TYPE TABLE OF bapiret2.
+        ls_order_partner   TYPE bapiparnr.
 
   " Populate Order Header
   ls_order_header-doc_type = 'TA'. " Standard Order
@@ -120,9 +134,23 @@ START-OF-SELECTION.
       return             = lt_return
       order_items_in     = lt_order_items
       order_schedules_in = lt_order_schedules
-      order_partners     = lt_order_partners.
+      order_partners     = lt_order_partners
+      order_conditions   = lt_pricing.
 
-  " Display Simulation Messages
-  LOOP AT lt_return INTO DATA(ls_return).
-    MESSAGE |{ ls_return-type }: { ls_return-message }| TYPE 'I'.
-  ENDLOOP.
+  " Display Simulation Results in ALV
+
+  " ALV for Messages
+  TRY.
+      DATA(lo_alv_ret) = cl_salv_table=>factory( IMPORTING r_salv_table = lo_alv_ret CHANGING t_table = lt_return ).
+      lo_alv_ret->display( ).
+  CATCH cx_salv_msg.
+      MESSAGE 'Error displaying messages' TYPE 'E'.
+  ENDTRY.
+
+  " ALV for Pricing Conditions
+  TRY.
+      DATA(lo_alv_price) = cl_salv_table=>factory( IMPORTING r_salv_table = lo_alv_price CHANGING t_table = lt_pricing ).
+      lo_alv_price->display( ).
+  CATCH cx_salv_msg.
+      MESSAGE 'Error displaying pricing' TYPE 'E'.
+  ENDTRY.
